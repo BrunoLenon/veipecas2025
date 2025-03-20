@@ -14,9 +14,13 @@ export function JwtRoleStatus() {
         const payload = JSON.parse(atob(jwt.split('.')[1]));
         console.log("JWT payload:", payload);
 
-        const userMeta = payload.user_metadata || {};
-        setRole(userMeta.role || 'Não encontrado');
-        setSellerId(userMeta.seller_id || 'Não vinculado');
+        const roleFromUserMeta = payload?.user_metadata?.role;
+        const roleFromAppMeta = payload?.app_metadata?.role;
+        const sellerIdFromUserMeta = payload?.user_metadata?.seller_id;
+        const sellerIdFromAppMeta = payload?.app_metadata?.seller_id;
+
+        setRole(roleFromUserMeta || roleFromAppMeta || 'Não encontrado');
+        setSellerId(sellerIdFromUserMeta || sellerIdFromAppMeta || 'Não vinculado');
       } else {
         setRole('Sem sessão');
         setSellerId(null);
