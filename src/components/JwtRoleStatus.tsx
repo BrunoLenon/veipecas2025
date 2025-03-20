@@ -12,6 +12,7 @@ export function JwtRoleStatus() {
       if (session) {
         const jwt = session.access_token;
         const payload = JSON.parse(atob(jwt.split('.')[1]));
+        console.log("JWT payload:", payload); // <-- debug do JWT no navegador
         const meta = payload.raw_user_meta_data || {};
         setRole(meta.role || 'Não encontrado');
         setSellerId(meta.seller_id || 'Não vinculado');
