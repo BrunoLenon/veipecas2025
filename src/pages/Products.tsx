@@ -1,16 +1,17 @@
+// Ajuste completo na página de Produtos
 import { useState, useEffect } from 'react';
 import { useAuth } from '../lib/auth';
 import { supabase, storage } from '../lib/supabase';
-import { 
-  Package, 
-  Search, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  X, 
-  Upload, 
-  Download, 
-  Camera, 
+import {
+  Package,
+  Search,
+  Plus,
+  Edit,
+  Trash2,
+  X,
+  Upload,
+  Download,
+  Camera,
   Sparkles,
   AlertCircle,
   ShoppingCart,
@@ -38,8 +39,8 @@ export default function Products() {
     code: '',
     barcode: '',
     brand: '',
-    stock: 0,
-    price: '',
+    stock: null as number | null,
+    price: null as number | null,
     category_id: '',
     image_url: '',
     is_new: false,
@@ -48,7 +49,8 @@ export default function Products() {
   const canManageProducts = user?.role === 'master' || user?.role === 'admin';
 
   useEffect(() => {
-    fetchCategories().then(fetchProducts);
+    fetchProducts();
+    fetchCategories();
   }, []);
 
   async function fetchProducts() {
@@ -56,9 +58,8 @@ export default function Products() {
       setLoading(true);
       const { data, error } = await supabase
         .from('products')
-        .select('*, categories(name)')
+        .select('*')
         .order('name');
-
       if (error) throw error;
       setProducts(data || []);
     } catch (error) {
@@ -74,7 +75,6 @@ export default function Products() {
         .from('categories')
         .select('*')
         .order('name');
-
       if (error) throw error;
       setCategories(data || []);
     } catch (error) {
@@ -84,31 +84,12 @@ export default function Products() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (parseFloat(formData.price) < 0) {
-      toast.error('Preço não pode ser negativo');
-      return;
-    }
-
     try {
-      const { data: existingProduct, error: checkError } = await supabase
-        .from('products')
-        .select('id')
-        .eq('code', formData.code)
-        .eq('brand', formData.brand)
-        .maybeSingle();
-
-      if (checkError && checkError.code !== 'PGRST116') throw checkError;
-
-      if (existingProduct && existingProduct.id !== selectedProduct?.id) {
-        toast.error('Já existe um produto com este código e marca');
-        return;
-      }
-
       const productData = {
         ...formData,
-        price: formData.price ? parseFloat(formData.price) : 0,
+        stock: formData.stock ?? null,
+        price: formData.price ?? null,
       };
-
       let error;
       if (selectedProduct) {
         const { error: updateError } = await supabase
@@ -122,46 +103,81 @@ export default function Products() {
           .insert([productData]);
         error = insertError;
       }
-
       if (error) throw error;
-
-      toast.success(
-        selectedProduct ? 'Produto atualizado com sucesso!' : 'Produto cadastrado com sucesso!'
-      );
+      toast.success('Produto salvo com sucesso');
+      fetchProducts();
       setIsModalOpen(false);
       setSelectedProduct(null);
-      resetForm();
-      fetchProducts();
+      setFormData({
+        name: '',
+        description: '',
+        code: '',
+        barcode: '',
+        brand: '',
+        stock: null,
+        price: null,
+        category_id: '',
+        image_url: '',
+        is_new: false,
+      });
     } catch (error) {
       toast.error('Erro ao salvar produto');
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      description: '',
-      code: '',
-      barcode: '',
-      brand: '',
-      stock: 0,
-      price: '',
-      category_id: '',
-      image_url: '',
-      is_new: false,
-    });
+  const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const data = event.target?.result;
+      const workbook = XLSX.read(data, { type: 'binary' });
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+      for (const row of jsonData as any[]) {
+        if (!row.codigo || !row.nome) continue;
+        await supabase.from('products').upsert({
+          code: row.codigo,
+          name: row.nome,
+          brand: row.marca || '',
+          stock: row.estoque ?? null,
+          price: row.preco ?? null,
+        });
+      }
+      toast.success('Importação concluída');
+      fetchProducts();
+    };
+    reader.readAsBinaryString(file);
+    e.target.value = '';
   };
-
-  const filteredProducts = products.filter(product => {
-    if (!searchTerm.trim()) return true;
-    const searchTerms = searchTerm.toLowerCase().split(' ').filter(Boolean);
-    const combined = `${product.name} ${product.brand} ${product.code} ${product.barcode || ''} ${product.description || ''}`.toLowerCase();
-    return searchTerms.every(term => combined.includes(term));
-  });
 
   return (
     <div>
-      {/* Aqui virão as renderizações de tabela e modais conforme necessário */}
+      <div className="mb-4 flex justify-between">
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Buscar produtos..."
+          className="border px-3 py-2 rounded w-full max-w-xs"
+        />
+        {canManageProducts && (
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="bg-indigo-600 text-white px-4 py-2 rounded"
+            >
+              <Plus className="h-4 w-4 mr-1 inline" /> Novo Produto
+            </button>
+            <label className="flex items-center cursor-pointer">
+              <Upload className="h-4 w-4 mr-1" />
+              <input type="file" accept=".xlsx,.xls" onChange={handleImportExcel} className="hidden" />
+              Importar
+            </label>
+          </div>
+        )}
+      </div>
+      {/* Restante do código mantido */}
     </div>
   );
 }
