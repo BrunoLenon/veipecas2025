@@ -14,13 +14,12 @@ export function JwtRoleStatus() {
         const payload = JSON.parse(atob(jwt.split('.')[1]));
         console.log("JWT payload:", payload);
 
-        const roleFromUserMeta = payload?.user_metadata?.role;
-        const roleFromAppMeta = payload?.app_metadata?.role;
-        const sellerIdFromUserMeta = payload?.user_metadata?.seller_id;
-        const sellerIdFromAppMeta = payload?.app_metadata?.seller_id;
+        const userMeta = payload.user_metadata || {};
+        const appMeta = payload.app_metadata || {};
 
-        setRole(roleFromUserMeta || roleFromAppMeta || 'Não encontrado');
-        setSellerId(sellerIdFromUserMeta || sellerIdFromAppMeta || 'Não vinculado');
+        // Fallback: se role não estiver nos metas, tenta pegar do próprio payload padrão
+        setRole(userMeta.role || appMeta.role || payload.role || 'Não encontrado');
+        setSellerId(userMeta.seller_id || appMeta.seller_id || 'Não vinculado');
       } else {
         setRole('Sem sessão');
         setSellerId(null);
