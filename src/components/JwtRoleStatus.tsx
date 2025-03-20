@@ -12,10 +12,13 @@ export function JwtRoleStatus() {
       if (session) {
         const jwt = session.access_token;
         const payload = JSON.parse(atob(jwt.split('.')[1]));
-        console.log("JWT payload:", payload); // debug no console
-        const meta = payload.user_metadata || payload.app_metadata || {};
-        setRole(meta.role || 'Não encontrado');
-        setSellerId(meta.seller_id || 'Não vinculado');
+        console.log("JWT payload:", payload);
+
+        const userMeta = payload.user_metadata || {};
+        const appMeta = payload.app_metadata || {};
+
+        setRole(userMeta.role || appMeta.role || 'Não encontrado');
+        setSellerId(userMeta.seller_id || appMeta.seller_id || 'Não vinculado');
       } else {
         setRole('Sem sessão');
         setSellerId(null);
@@ -35,3 +38,4 @@ export function JwtRoleStatus() {
     </div>
   );
 }
+git add .
