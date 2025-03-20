@@ -15,10 +15,8 @@ export function JwtRoleStatus() {
         console.log("JWT payload:", payload);
 
         const userMeta = payload.user_metadata || {};
-        const appMeta = payload.app_metadata || {};
-
-        setRole(userMeta.role || appMeta.role || 'Não encontrado');
-        setSellerId(userMeta.seller_id || appMeta.seller_id || 'Não vinculado');
+        setRole(userMeta.role || 'Não encontrado');
+        setSellerId(userMeta.seller_id || 'Não vinculado');
       } else {
         setRole('Sem sessão');
         setSellerId(null);
@@ -38,4 +36,3 @@ export function JwtRoleStatus() {
     </div>
   );
 }
-git add .
