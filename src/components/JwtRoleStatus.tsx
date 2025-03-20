@@ -12,10 +12,16 @@ export function JwtRoleStatus() {
       if (session) {
         const jwt = session.access_token;
         const payload = JSON.parse(atob(jwt.split('.')[1]));
-        console.log("JWT payload:", payload); // <-- debug do JWT no navegador
-        const meta = payload.raw_user_meta_data || {};
-        setRole(meta.role || 'Não encontrado');
-        setSellerId(meta.seller_id || 'Não vinculado');
+        console.log("JWT payload:", payload);
+
+        const meta = payload.user_metadata || {};
+        const appMeta = payload.app_metadata || {};
+
+        const roleFromJwt = meta.role || appMeta.role || payload.role || 'Não encontrado';
+        const sellerFromJwt = meta.seller_id || appMeta.seller_id || null;
+
+        setRole(roleFromJwt);
+        setSellerId(sellerFromJwt);
       } else {
         setRole('Sem sessão');
         setSellerId(null);
