@@ -11,12 +11,12 @@ interface CanAccessProps {
 const CanAccess = ({ roles, children, fallback = null }: CanAccessProps) => {
   const { user } = useAuth();
 
-  // Se não tiver user ou role, bloqueia
+  // Se o usuário não existir ou não tiver uma role autorizada, renderiza o fallback
   if (!user || !roles.includes(user.role)) {
     return <>{fallback}</>;
   }
 
-  // Renderiza os filhos caso tenha permissão
+  // Renderiza o conteúdo autorizado
   return <>{children}</>;
 };
 
